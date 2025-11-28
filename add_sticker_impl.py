@@ -4,6 +4,7 @@ from typing import Optional, Dict
 from pyJianYingDraft import exceptions
 from create_draft import get_or_create_draft
 from util import generate_draft_url
+from tool import pixel_to_ratio
 
 def add_sticker_impl(
     resource_id: str,
@@ -12,6 +13,8 @@ def add_sticker_impl(
     draft_id: str = None,
     transform_y: float = 0,
     transform_x: float = 0,
+    transform_x_px: float = 0,
+    transform_y_px: float = 0,
     alpha: float = 1.0,
     flip_horizontal: bool = False,
     flip_vertical: bool = False,
@@ -60,7 +63,11 @@ def add_sticker_impl(
             script.add_track(draft.Track_type.sticker, track_name=track_name, relative_index=relative_index)
     else:
         script.add_track(draft.Track_type.sticker, relative_index=relative_index)
-    
+
+    # 如果transform_x和transform_y为0，则使用transform_x_px和transform_y_px
+    if transform_x == 0 and transform_y == 0:
+        transform_x, transform_y = pixel_to_ratio(x=transform_x_px, y=transform_y_px, video_width=script.width, video_height=script.height)
+
     # Create sticker segment
     sticker_segment = draft.Sticker_segment(
         resource_id,

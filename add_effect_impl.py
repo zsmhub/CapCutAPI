@@ -66,7 +66,7 @@ def add_effect_impl(
                 effect_enum = Video_character_effect_type[effect_type]
             except:
                 effect_enum = None
-    
+
     if effect_enum is None:
         raise ValueError(f"Unknown {effect_category} effect type: {effect_type}")
 
@@ -82,7 +82,8 @@ def add_effect_impl(
         script.add_track(draft.Track_type.effect)
 
     # Add effect
-    script.add_effect(effect_enum, t_range, params=params[::-1], track_name=track_name)
+    reversed_params = params[::-1] if params is not None else None
+    script.add_effect(effect_enum, t_range, params=reversed_params, track_name=track_name)
 
     return {
         "draft_id": draft_id,

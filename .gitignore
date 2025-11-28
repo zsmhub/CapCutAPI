@@ -9,9 +9,11 @@ dist/
 .idea/
 .DS_Store
 
-config.json
 ./resource
 
 .venv/
 venv/
 tmp/
+ven-capcut/
+
+config.json
