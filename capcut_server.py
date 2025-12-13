@@ -337,6 +337,9 @@ def add_text():
     outro_duration = data.get('outro_duration', 0.5)
     width = data.get('width', 1080)
     height = data.get('height', 1920)
+    font_align = data.get('align', 1)
+    letter_spacing = data.get('letter_spacing', 0)
+    line_spacing = data.get('line_spacing', 0)
 
     # New fixed width and height parameters
     fixed_width = data.get('fixed_width', -1)
@@ -480,7 +483,10 @@ def add_text():
             height=height,
             fixed_width=fixed_width,
             fixed_height=fixed_height,
-            text_styles=text_styles
+            text_styles=text_styles,
+            font_align=font_align,
+            letter_spacing=letter_spacing,
+            line_spacing=line_spacing
         )
 
         result["success"] = True

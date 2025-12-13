@@ -97,7 +97,7 @@ cp config.json.example config.json
 ```bash
 python capcut_server.py # 启动HTTP API服务器, 默认端口: 9001
 
-python mcp_server.py # 启动 MCP 协议服务，支持 stdio 通信
+python mcp_server.py # 启动 MCP 协议服务，支持 stdio 通信【没用到】
 ```
 
 ## MCP 集成指南
