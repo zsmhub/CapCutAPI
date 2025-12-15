@@ -59,6 +59,8 @@ def add_video():
     transition = data.get('transition')  # New transition type parameter
     transition_duration = data.get('transition_duration', 0.5)  # New transition duration parameter, default 0.5 seconds
     volume = data.get('volume', 1.0)  # New volume parameter, default 1.0
+    transform_y_px = data.get('transform_y_px', 0)
+    transform_x_px = data.get('transform_x_px', 0)
 
     # Get mask related parameters
     mask_type = data.get('mask_type')  # Mask type
@@ -99,6 +101,8 @@ def add_video():
             scale_x=scale_x,
             scale_y=scale_y,
             transform_x=transform_x,
+            transform_y_px=transform_y_px,
+            transform_x_px=transform_x_px,
             speed=speed,
             track_name=track_name,
             relative_index=relative_index,
@@ -254,6 +258,8 @@ def add_subtitle():
     # Image adjustment parameters
     transform_x = data.get('transform_x', 0.0)  # Default 0
     transform_y = data.get('transform_y', -0.8)  # Default -0.8
+    transform_y_px = data.get('transform_y_px', 0)
+    transform_x_px = data.get('transform_x_px', 0)
     scale_x = data.get('scale_x', 1.0)  # Default 1.0
     scale_y = data.get('scale_y', 1.0)  # Default 1.0
     rotation = data.get('rotation', 0.0)  # Default 0.0
@@ -298,6 +304,8 @@ def add_subtitle():
             # Image adjustment parameters
             transform_x=transform_x,
             transform_y=transform_y,
+            transform_y_px=transform_y_px,
+            transform_x_px=transform_x_px,
             scale_x=scale_x,
             scale_y=scale_y,
             rotation=rotation,
@@ -853,6 +861,8 @@ def add_sticker():
     draft_id = data.get('draft_id')
     transform_y = data.get('transform_y', 0)
     transform_x = data.get('transform_x', 0)
+    transform_y_px = data.get('transform_y_px', 0)
+    transform_x_px = data.get('transform_x_px', 0)
     alpha = data.get('alpha', 1.0)
     flip_horizontal = data.get('flip_horizontal', False)
     flip_vertical = data.get('flip_vertical', False)
@@ -885,6 +895,8 @@ def add_sticker():
             draft_id=draft_id,
             transform_y=transform_y,
             transform_x=transform_x,
+            transform_y_px=transform_y_px,
+            transform_x_px=transform_x_px,
             alpha=alpha,
             flip_horizontal=flip_horizontal,
             flip_vertical=flip_vertical,
