@@ -1,0 +1,13 @@
+{
+  "is_capcut_env": false,
+  "draft_domain": "http://0.0.0.0:9001",
+  "port": 9001,
+  "preview_router": "/draft/downloader",
+  "is_upload_draft": true,
+  "oss_config": {
+    "bucket_name": "xxx",
+    "access_key_id": "xxx",
+    "access_key_secret": "xxx",
+    "endpoint": "https://oss-cn-shanghai.aliyuncs.com"
+  }
+}

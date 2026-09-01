@@ -35,7 +35,7 @@ from pyJianYingDraft.text_segment import TextStyleRange, Text_style, Text_border
 from settings.local import IS_CAPCUT_ENV, DRAFT_DOMAIN, PREVIEW_ROUTER, PORT
 
 app = Flask(__name__)
- 
+
 @app.route('/add_video', methods=['POST'])
 def add_video():
     data = request.get_json()
@@ -58,8 +58,10 @@ def add_video():
     duration = data.get('duration')  # New duration parameter
     transition = data.get('transition')  # New transition type parameter
     transition_duration = data.get('transition_duration', 0.5)  # New transition duration parameter, default 0.5 seconds
-    volume = data.get('volume', 1.0)  # New volume parameter, default 1.0 
-    
+    volume = data.get('volume', 1.0)  # New volume parameter, default 1.0
+    transform_y_px = data.get('transform_y_px', 0)
+    transform_x_px = data.get('transform_x_px', 0)
+
     # Get mask related parameters
     mask_type = data.get('mask_type')  # Mask type
     mask_center_x = data.get('mask_center_x', 0.5)  # Mask center X coordinate
@@ -99,6 +101,8 @@ def add_video():
             scale_x=scale_x,
             scale_y=scale_y,
             transform_x=transform_x,
+            transform_y_px=transform_y_px,
+            transform_x_px=transform_x_px,
             speed=speed,
             track_name=track_name,
             relative_index=relative_index,
@@ -118,7 +122,7 @@ def add_video():
             mask_round_corner=mask_round_corner,
             background_blur=background_blur
         )
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
@@ -131,7 +135,7 @@ def add_video():
 @app.route('/add_audio', methods=['POST'])
 def add_audio():
     data = request.get_json()
-    
+
     # Get required parameters
     draft_folder = data.get('draft_folder')
     audio_url = data.get('audio_url')
@@ -148,7 +152,7 @@ def add_audio():
     effect_params = data.get('effect_params', None)  # Audio effect parameter list
     width = data.get('width', 1080)
     height = data.get('height', 1920)
-    
+
     # # If there are audio effect parameters, combine them into sound_effects format
     sound_effects = None
     if effect_type is not None:
@@ -183,7 +187,7 @@ def add_audio():
             height=height,
             duration=duration  # Add duration parameter
         )
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
@@ -196,42 +200,42 @@ def add_audio():
 @app.route('/create_draft', methods=['POST'])
 def create_draft_service():
     data = request.get_json()
-    
+
     # Get parameters
     width = data.get('width', 1080)
     height = data.get('height', 1920)
-    
+
     result = {
         "success": False,
         "output": "",
         "error": ""
     }
-    
+
     try:
         # Create new draft
         script, draft_id = create_draft(width=width, height=height)
-        
+
         result["success"] = True
         result["output"] = {
             "draft_id": draft_id,
             "draft_url": utilgenerate_draft_url(draft_id)
         }
         return jsonify(result)
-        
+
     except Exception as e:
         error_message = f"Error occurred while creating draft: {str(e)}."
         result["error"] = error_message
         return jsonify(result)
-        
+
 @app.route('/add_subtitle', methods=['POST'])
 def add_subtitle():
     data = request.get_json()
-    
+
     # Get required parameters
     srt = data.get('srt')  # Subtitle content or URL
     draft_id = data.get('draft_id')
     time_offset = data.get('time_offset', 0.0)  # Default 0 seconds
-    
+
     # Font style parameters
     font = data.get('font', "思源粗宋")
     font_size = data.get('font_size', 5.0)  # Default size 5.0
@@ -245,15 +249,17 @@ def add_subtitle():
     border_alpha = data.get('border_alpha', 1.0)
     border_color = data.get('border_color', '#000000')
     border_width = data.get('border_width', 0.0)
-    
+
     # Background parameters
     background_color = data.get('background_color', '#000000')
     background_style = data.get('background_style', 0)
     background_alpha = data.get('background_alpha', 0.0)
-        
+
     # Image adjustment parameters
     transform_x = data.get('transform_x', 0.0)  # Default 0
     transform_y = data.get('transform_y', -0.8)  # Default -0.8
+    transform_y_px = data.get('transform_y_px', 0)
+    transform_x_px = data.get('transform_x_px', 0)
     scale_x = data.get('scale_x', 1.0)  # Default 1.0
     scale_y = data.get('scale_y', 1.0)  # Default 1.0
     rotation = data.get('rotation', 0.0)  # Default 0.0
@@ -298,13 +304,15 @@ def add_subtitle():
             # Image adjustment parameters
             transform_x=transform_x,
             transform_y=transform_y,
+            transform_y_px=transform_y_px,
+            transform_x_px=transform_x_px,
             scale_x=scale_x,
             scale_y=scale_y,
             rotation=rotation,
             width=width,
             height=height
         )
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
@@ -317,7 +325,7 @@ def add_subtitle():
 @app.route('/add_text', methods=['POST'])
 def add_text():
     data = request.get_json()
-    
+
     # Get required parameters
     text = data.get('text')
     start = data.get('start', 0)
@@ -325,26 +333,31 @@ def add_text():
     draft_id = data.get('draft_id')
     transform_y = data.get('transform_y', 0)
     transform_x = data.get('transform_x', 0)
+    transform_y_px = data.get('transform_y_px', 0)
+    transform_x_px = data.get('transform_x_px', 0)
     font = data.get('font', "文轩体")
     font_color = data.get('color', data.get('font_color', "#FF0000"))  # Support both 'color' and 'font_color'
     font_size = data.get('size', data.get('font_size', 8.0))  # Support both 'size' and 'font_size'
     track_name = data.get('track_name', "text_main")
     vertical = data.get('vertical', False)
-    font_alpha = data.get('alpha', data.get('font_alpha', 1.0))  # Support both 'alpha' and 'font_alpha'  
+    font_alpha = data.get('alpha', data.get('font_alpha', 1.0))  # Support both 'alpha' and 'font_alpha'
     outro_animation = data.get('outro_animation', None)
     outro_duration = data.get('outro_duration', 0.5)
     width = data.get('width', 1080)
     height = data.get('height', 1920)
-    
-    # New fixed width and height parameters 
+    font_align = data.get('align', 1)
+    letter_spacing = data.get('letter_spacing', 0)
+    line_spacing = data.get('line_spacing', 0)
+
+    # New fixed width and height parameters
     fixed_width = data.get('fixed_width', -1)
     fixed_height = data.get('fixed_height', -1)
-    
+
     # Border parameters
     border_alpha = data.get('border_alpha', 1.0)
     border_color = data.get('border_color', "#000000")
     border_width = data.get('border_width', 0.0)
-    
+
     # Background parameters
     background_color = data.get('background_color', "#000000")
     background_style = data.get('background_style', 0)
@@ -362,16 +375,16 @@ def add_text():
     shadow_color = data.get('shadow_color', "#000000")  # Shadow color
     shadow_distance = data.get('shadow_distance', 5.0)  # Shadow distance
     shadow_smoothing = data.get('shadow_smoothing', 0.15)  # Shadow smoothing, range 0.0-1.0
-    
+
     # Bubble and decorative text effects
     bubble_effect_id = data.get('bubble_effect_id')
     bubble_resource_id = data.get('bubble_resource_id')
     effect_effect_id = data.get('effect_effect_id')
-    
+
     # Entrance animation
     intro_animation = data.get('intro_animation')
     intro_duration = data.get('intro_duration', 0.5)
-    
+
     # Exit animation
     outro_animation = data.get('outro_animation')
     outro_duration = data.get('outro_duration', 0.5)
@@ -385,7 +398,7 @@ def add_text():
             # Get style range
             start_pos = style_data.get('start', 0)
             end_pos = style_data.get('end', 0)
-            
+
             # Create text style
             style = Text_style(
                 size=style_data.get('style',{}).get('size', font_size),
@@ -399,7 +412,7 @@ def add_text():
                 letter_spacing=style_data.get('style',{}).get('letter_spacing', 0),
                 line_spacing=style_data.get('style',{}).get('line_spacing', 0)
             )
-            
+
             # Create border (if any)
             border = None
             if style_data.get('border',{}).get('width', 0) > 0:
@@ -408,7 +421,7 @@ def add_text():
                     color=hex_to_rgb(style_data.get('border',{}).get('color', border_color)),
                     width=style_data.get('border',{}).get('width', border_width)
                 )
-            
+
             # Create style range object
             style_range = TextStyleRange(
                 start=start_pos,
@@ -417,7 +430,7 @@ def add_text():
                 border=border,
                 font_str=style_data.get('font', font)
             )
-            
+
             text_styles.append(style_range)
 
     result = {
@@ -433,7 +446,7 @@ def add_text():
         return jsonify(result)
 
     try:
-        
+
         # Call add_text_impl method
         draft_result = add_text_impl(
             text=text,
@@ -442,6 +455,8 @@ def add_text():
             draft_id=draft_id,
             transform_y=transform_y,
             transform_x=transform_x,
+            transform_y_px=transform_y_px,
+            transform_x_px=transform_x_px,
             font=font,
             font_color=font_color,
             font_size=font_size,
@@ -476,9 +491,12 @@ def add_text():
             height=height,
             fixed_width=fixed_width,
             fixed_height=fixed_height,
-            text_styles=text_styles
+            text_styles=text_styles,
+            font_align=font_align,
+            letter_spacing=letter_spacing,
+            line_spacing=line_spacing
         )
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
@@ -491,7 +509,7 @@ def add_text():
 @app.route('/add_image', methods=['POST'])
 def add_image():
     data = request.get_json()
-    
+
     # Get required parameters
     draft_folder = data.get('draft_folder')
     image_url = data.get('image_url')
@@ -504,8 +522,10 @@ def add_image():
     scale_x = data.get('scale_x', 1)
     scale_y = data.get('scale_y', 1)
     transform_x = data.get('transform_x', 0)
+    transform_y_px = data.get('transform_y_px', 0)
+    transform_x_px = data.get('transform_x_px', 0)
     track_name = data.get('track_name', "image_main")  # Default track name
-    relative_index = data.get('relative_index', 0)  # New track rendering order index parameter 
+    relative_index = data.get('relative_index', 0)  # New track rendering order index parameter
     animation = data.get('animation')  # Entrance animation parameter (backward compatibility)
     animation_duration = data.get('animation_duration', 0.5)  # Entrance animation duration
     intro_animation = data.get('intro_animation')  # New entrance animation parameter, higher priority than animation
@@ -516,8 +536,8 @@ def add_image():
     combo_animation_duration = data.get('combo_animation_duration', 0.5)  # New combo animation duration
     transition = data.get('transition')  # Transition type parameter
     transition_duration = data.get('transition_duration', 0.5)  # Transition duration parameter, default 0.5 seconds
-    
-    # New mask related parameters 
+
+    # New mask related parameters
     mask_type = data.get('mask_type')  # Mask type
     mask_center_x = data.get('mask_center_x', 0.0)  # Mask center X coordinate
     mask_center_y = data.get('mask_center_y', 0.0)  # Mask center Y coordinate
@@ -555,6 +575,8 @@ def add_image():
             scale_x=scale_x,
             scale_y=scale_y,
             transform_x=transform_x,
+            transform_y_px=transform_y_px,
+            transform_x_px=transform_x_px,
             track_name=track_name,
             relative_index=relative_index,  # Pass track rendering order index parameter
             animation=animation,  # Pass entrance animation parameter (backward compatibility)
@@ -579,7 +601,7 @@ def add_image():
             mask_round_corner=mask_round_corner,
             background_blur=background_blur
         )
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
@@ -592,16 +614,16 @@ def add_image():
 @app.route('/add_video_keyframe', methods=['POST'])
 def add_video_keyframe():
     data = request.get_json()
-    
+
     # Get required parameters
     draft_id = data.get('draft_id')
     track_name = data.get('track_name', 'video_main')  # Default main track
-    
+
     # Single keyframe parameters (backward compatibility)
     property_type = data.get('property_type', 'alpha')  # Default opacity
     time = data.get('time', 0.0)  # Default 0 seconds
     value = data.get('value', '1.0')  # Default value 1.0
-    
+
     # Batch keyframe parameters (new)
     property_types = data.get('property_types')  # Property type list
     times = data.get('times')  # Time list
@@ -625,7 +647,7 @@ def add_video_keyframe():
             times=times,
             values=values
         )
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
@@ -638,7 +660,7 @@ def add_video_keyframe():
 @app.route('/add_effect', methods=['POST'])
 def add_effect():
     data = request.get_json()
-    
+
     # Get required parameters
     effect_type = data.get('effect_type')  # Effect type name, will match from Video_scene_effect_type or Video_character_effect_type
     start = data.get('start', 0)  # Start time (seconds), default 0
@@ -675,7 +697,7 @@ def add_effect():
             width=width,
             height=height
         )
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
@@ -692,7 +714,7 @@ def query_script():
     # Get required parameters
     draft_id = data.get('draft_id')
     force_update = data.get('force_update', True)
-    
+
     result = {
         "success": False,
         "output": "",
@@ -708,15 +730,15 @@ def query_script():
     try:
         # Call query_script_impl method
         script = query_script_impl(draft_id=draft_id, force_update=force_update)
-        
+
         if script is None:
             error_message = f"Draft {draft_id} does not exist in cache."
             result["error"] = error_message
             return jsonify(result)
-        
+
         # Convert script object to JSON serializable dictionary
         script_str = script.dumps()
-        
+
         result["success"] = True
         result["output"] = script_str
         return jsonify(result)
@@ -729,31 +751,31 @@ def query_script():
 @app.route('/save_draft', methods=['POST'])
 def save_draft():
     data = request.get_json()
-    
+
     # Get required parameters
     draft_id = data.get('draft_id')
     draft_folder = data.get('draft_folder')  # Draft folder parameter
-    
+
     result = {
         "success": False,
         "output": "",
         "error": ""
     }
-    
+
     # Validate required parameters
     if not draft_id:
         error_message = "Hi, the required parameter 'draft_id' is missing. Please add it and try again."
         result["error"] = error_message
         return jsonify(result)
-    
+
     try:
         # Call save_draft_impl method, start background task
         draft_result = save_draft_impl(draft_id, draft_folder)
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
-        
+
     except Exception as e:
         error_message = f"Error occurred while saving draft: {str(e)}. "
         result["error"] = error_message
@@ -763,35 +785,35 @@ def save_draft():
 @app.route('/query_draft_status', methods=['POST'])
 def query_draft_status():
     data = request.get_json()
-    
+
     # Get required parameters
     task_id = data.get('task_id')
-    
+
     result = {
         "success": False,
         "output": "",
         "error": ""
     }
-    
+
     # Validate required parameters
     if not task_id:
         error_message = "Hi, the required parameter 'task_id' is missing. Please add it and try again."
         result["error"] = error_message
         return jsonify(result)
-    
+
     try:
         # Get task status
         task_status = query_task_status(task_id)
-        
+
         if task_status["status"] == "not_found":
             error_message = f"Task with ID {task_id} not found. Please check if the task ID is correct."
             result["error"] = error_message
             return jsonify(result)
-        
+
         result["success"] = True
         result["output"] = task_status
         return jsonify(result)
-        
+
     except Exception as e:
         error_message = f"Error occurred while querying task status: {str(e)}."
         result["error"] = error_message
@@ -800,30 +822,30 @@ def query_draft_status():
 @app.route('/generate_draft_url', methods=['POST'])
 def generate_draft_url():
     data = request.get_json()
-    
+
     # Get required parameters
     draft_id = data.get('draft_id')
     draft_folder = data.get('draft_folder')  # New draft_folder parameter
-    
+
     result = {
         "success": False,
         "output": "",
         "error": ""
     }
-    
+
     # Validate required parameters
     if not draft_id:
         error_message = "Hi, the required parameter 'draft_id' is missing. Please add it and try again."
         result["error"] = error_message
         return jsonify(result)
-    
+
     try:
         draft_result = { "draft_url" : f"{DRAFT_DOMAIN}{PREVIEW_ROUTER}?={draft_id}"}
-        
+
         result["success"] = True
         result["output"] = draft_result
         return jsonify(result)
-        
+
     except Exception as e:
         error_message = f"Error occurred while saving draft: {str(e)}."
         result["error"] = error_message
@@ -839,6 +861,8 @@ def add_sticker():
     draft_id = data.get('draft_id')
     transform_y = data.get('transform_y', 0)
     transform_x = data.get('transform_x', 0)
+    transform_y_px = data.get('transform_y_px', 0)
+    transform_x_px = data.get('transform_x_px', 0)
     alpha = data.get('alpha', 1.0)
     flip_horizontal = data.get('flip_horizontal', False)
     flip_vertical = data.get('flip_vertical', False)
@@ -871,6 +895,8 @@ def add_sticker():
             draft_id=draft_id,
             transform_y=transform_y,
             transform_x=transform_x,
+            transform_y_px=transform_y_px,
+            transform_x_px=transform_x_px,
             alpha=alpha,
             flip_horizontal=flip_horizontal,
             flip_vertical=flip_vertical,
@@ -895,7 +921,7 @@ def add_sticker():
 @app.route('/get_intro_animation_types', methods=['GET'])
 def get_intro_animation_types():
     """Return supported entrance animation type list
-    
+
     If IS_CAPCUT_ENV is True, return entrance animation types in CapCut environment
     Otherwise return entrance animation types in JianYing environment
     """
@@ -904,10 +930,10 @@ def get_intro_animation_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         animation_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return entrance animation types in CapCut environment
             for name, member in CapCut_Intro_type.__members__.items():
@@ -920,19 +946,19 @@ def get_intro_animation_types():
                 animation_types.append({
                     "name": name
                 })
-        
+
         result["output"] = animation_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting entrance animation types: {str(e)}"
         return jsonify(result)
-        
+
 @app.route('/get_outro_animation_types', methods=['GET'])
 def get_outro_animation_types():
     """Return supported exit animation type list
-    
+
     If IS_CAPCUT_ENV is True, return exit animation types in CapCut environment
     Otherwise return exit animation types in JianYing environment
     """
@@ -941,10 +967,10 @@ def get_outro_animation_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         animation_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return exit animation types in CapCut environment
             for name, member in CapCut_Outro_type.__members__.items():
@@ -957,10 +983,10 @@ def get_outro_animation_types():
                 animation_types.append({
                     "name": name
                 })
-        
+
         result["output"] = animation_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting exit animation types: {str(e)}"
@@ -970,7 +996,7 @@ def get_outro_animation_types():
 @app.route('/get_combo_animation_types', methods=['GET'])
 def get_combo_animation_types():
     """Return supported combo animation type list
-    
+
     If IS_CAPCUT_ENV is True, return combo animation types in CapCut environment
     Otherwise return combo animation types in JianYing environment
     """
@@ -979,10 +1005,10 @@ def get_combo_animation_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         animation_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return combo animation types in CapCut environment
             for name, member in CapCut_Group_animation_type.__members__.items():
@@ -995,10 +1021,10 @@ def get_combo_animation_types():
                 animation_types.append({
                     "name": name
                 })
-        
+
         result["output"] = animation_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting combo animation types: {str(e)}"
@@ -1008,7 +1034,7 @@ def get_combo_animation_types():
 @app.route('/get_transition_types', methods=['GET'])
 def get_transition_types():
     """Return supported transition animation type list
-    
+
     If IS_CAPCUT_ENV is True, return transition animation types in CapCut environment
     Otherwise return transition animation types in JianYing environment
     """
@@ -1017,10 +1043,10 @@ def get_transition_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         transition_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return transition animation types in CapCut environment
             for name, member in CapCut_Transition_type.__members__.items():
@@ -1033,10 +1059,10 @@ def get_transition_types():
                 transition_types.append({
                     "name": name
                 })
-        
+
         result["output"] = transition_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting transition animation types: {str(e)}"
@@ -1046,7 +1072,7 @@ def get_transition_types():
 @app.route('/get_mask_types', methods=['GET'])
 def get_mask_types():
     """Return supported mask type list
-    
+
     If IS_CAPCUT_ENV is True, return mask types in CapCut environment
     Otherwise return mask types in JianYing environment
     """
@@ -1055,10 +1081,10 @@ def get_mask_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         mask_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return mask types in CapCut environment
             for name, member in CapCut_Mask_type.__members__.items():
@@ -1071,10 +1097,10 @@ def get_mask_types():
                 mask_types.append({
                     "name": name
                 })
-        
+
         result["output"] = mask_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting mask types: {str(e)}"
@@ -1084,10 +1110,10 @@ def get_mask_types():
 @app.route('/get_audio_effect_types', methods=['GET'])
 def get_audio_effect_types():
     """Return supported audio effect type list
-    
+
     If IS_CAPCUT_ENV is True, return audio effect types in CapCut environment
     Otherwise return audio effect types in JianYing environment
-    
+
     The returned structure includes name, type and Effect_param information
     """
     result = {
@@ -1095,10 +1121,10 @@ def get_audio_effect_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         audio_effect_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return audio effect types in CapCut environment
             # 1. Voice filters effect types
@@ -1111,13 +1137,13 @@ def get_audio_effect_types():
                         "min_value": param.min_value * 100,
                         "max_value": param.max_value * 100
                     })
-                
+
                 audio_effect_types.append({
                     "name": name,
                     "type": "Voice_filters",
                     "params": params_info
                 })
-            
+
             # 2. Voice characters effect types
             for name, member in CapCut_Voice_characters_effect_type.__members__.items():
                 params_info = []
@@ -1128,13 +1154,13 @@ def get_audio_effect_types():
                         "min_value": param.min_value * 100,
                         "max_value": param.max_value * 100
                     })
-                
+
                 audio_effect_types.append({
                     "name": name,
                     "type": "Voice_characters",
                     "params": params_info
                 })
-            
+
             # 3. Speech to song effect types
             for name, member in CapCut_Speech_to_song_effect_type.__members__.items():
                 params_info = []
@@ -1145,7 +1171,7 @@ def get_audio_effect_types():
                         "min_value": param.min_value * 100,
                         "max_value": param.max_value * 100
                     })
-                
+
                 audio_effect_types.append({
                     "name": name,
                     "type": "Speech_to_song",
@@ -1163,13 +1189,13 @@ def get_audio_effect_types():
                         "min_value": param.min_value * 100,
                         "max_value": param.max_value * 100
                     })
-                
+
                 audio_effect_types.append({
                     "name": name,
                     "type": "Tone",
                     "params": params_info
                 })
-            
+
             # 2. Audio scene effect types
             for name, member in Audio_scene_effect_type.__members__.items():
                 params_info = []
@@ -1180,13 +1206,13 @@ def get_audio_effect_types():
                         "min_value": param.min_value * 100,
                         "max_value": param.max_value * 100
                     })
-                
+
                 audio_effect_types.append({
                     "name": name,
                     "type": "Audio_scene",
                     "params": params_info
                 })
-            
+
             # 3. Speech to song effect types
             for name, member in Speech_to_song_type.__members__.items():
                 params_info = []
@@ -1197,16 +1223,16 @@ def get_audio_effect_types():
                         "min_value": param.min_value * 100,
                         "max_value": param.max_value * 100
                     })
-                
+
                 audio_effect_types.append({
                     "name": name,
                     "type": "Speech_to_song",
                     "params": params_info
                 })
-        
+
         result["output"] = audio_effect_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting audio effect types: {str(e)}"
@@ -1216,7 +1242,7 @@ def get_audio_effect_types():
 @app.route('/get_font_types', methods=['GET'])
 def get_font_types():
     """Return supported font type list
-    
+
     Return font types in JianYing environment
     """
     result = {
@@ -1224,19 +1250,19 @@ def get_font_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         font_types = []
-        
+
         # Return font types in JianYing environment
         for name, member in Font_type.__members__.items():
             font_types.append({
                 "name": name
             })
-        
+
         result["output"] = font_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting font types: {str(e)}"
@@ -1246,7 +1272,7 @@ def get_font_types():
 @app.route('/get_text_intro_types', methods=['GET'])
 def get_text_intro_types():
     """Return supported text entrance animation type list
-    
+
     If IS_CAPCUT_ENV is True, return text entrance animation types in CapCut environment
     Otherwise return text entrance animation types in JianYing environment
     """
@@ -1255,10 +1281,10 @@ def get_text_intro_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         text_intro_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return text entrance animation types in CapCut environment
             for name, member in CapCut_Text_intro.__members__.items():
@@ -1271,10 +1297,10 @@ def get_text_intro_types():
                 text_intro_types.append({
                     "name": name
                 })
-        
+
         result["output"] = text_intro_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting text entrance animation types: {str(e)}"
@@ -1283,7 +1309,7 @@ def get_text_intro_types():
 @app.route('/get_text_outro_types', methods=['GET'])
 def get_text_outro_types():
     """Return supported text exit animation type list
-    
+
     If IS_CAPCUT_ENV is True, return text exit animation types in CapCut environment
     Otherwise return text exit animation types in JianYing environment
     """
@@ -1292,10 +1318,10 @@ def get_text_outro_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         text_outro_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return text exit animation types in CapCut environment
             for name, member in CapCut_Text_outro.__members__.items():
@@ -1308,10 +1334,10 @@ def get_text_outro_types():
                 text_outro_types.append({
                     "name": name
                 })
-        
+
         result["output"] = text_outro_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting text exit animation types: {str(e)}"
@@ -1320,7 +1346,7 @@ def get_text_outro_types():
 @app.route('/get_text_loop_anim_types', methods=['GET'])
 def get_text_loop_anim_types():
     """Return supported text loop animation type list
-    
+
     If IS_CAPCUT_ENV is True, return text loop animation types in CapCut environment
     Otherwise return text loop animation types in JianYing environment
     """
@@ -1329,10 +1355,10 @@ def get_text_loop_anim_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         text_loop_anim_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return text loop animation types in CapCut environment
             for name, member in CapCut_Text_loop_anim.__members__.items():
@@ -1345,10 +1371,10 @@ def get_text_loop_anim_types():
                 text_loop_anim_types.append({
                     "name": name
                 })
-        
+
         result["output"] = text_loop_anim_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting text loop animation types: {str(e)}"
@@ -1358,7 +1384,7 @@ def get_text_loop_anim_types():
 @app.route('/get_video_scene_effect_types', methods=['GET'])
 def get_video_scene_effect_types():
     """Return supported scene effect type list
-    
+
     If IS_CAPCUT_ENV is True, return scene effect types in CapCut environment
     Otherwise return scene effect types in JianYing environment
     """
@@ -1367,10 +1393,10 @@ def get_video_scene_effect_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         effect_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return scene effect types in CapCut environment
             for name, member in CapCut_Video_scene_effect_type.__members__.items():
@@ -1383,10 +1409,10 @@ def get_video_scene_effect_types():
                 effect_types.append({
                     "name": name
                 })
-        
+
         result["output"] = effect_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting scene effect types: {str(e)}"
@@ -1396,7 +1422,7 @@ def get_video_scene_effect_types():
 @app.route('/get_video_character_effect_types', methods=['GET'])
 def get_video_character_effect_types():
     """Return supported character effect type list
-    
+
     If IS_CAPCUT_ENV is True, return character effect types in CapCut environment
     Otherwise return character effect types in JianYing environment
     """
@@ -1405,10 +1431,10 @@ def get_video_character_effect_types():
         "output": "",
         "error": ""
     }
-    
+
     try:
         effect_types = []
-        
+
         if IS_CAPCUT_ENV:
             # Return character effect types in CapCut environment
             for name, member in CapCut_Video_character_effect_type.__members__.items():
@@ -1421,13 +1447,130 @@ def get_video_character_effect_types():
                 effect_types.append({
                     "name": name
                 })
-        
+
         result["output"] = effect_types
         return jsonify(result)
-    
+
     except Exception as e:
         result["success"] = False
         result["error"] = f"Error occurred while getting character effect types: {str(e)}"
+        return jsonify(result)
+
+
+@app.route('/execute_workflow', methods=['POST'])
+def execute_workflow():
+    """执行草稿工作流
+
+    支持基于已有草稿继续编辑，或创建新草稿
+    按顺序执行多个动作步骤，最后保存草稿并返回结果
+    """
+    data = request.get_json()
+
+    # 获取参数
+    draft_id = data.get('draft_id')
+    draft_folder = data.get('draft_folder')
+    width = data.get('width', 1080)
+    height = data.get('height', 1920)
+    script_steps = data.get('script', [])
+
+    result = {
+        "success": False,
+        "output": "",
+        "error": ""
+    }
+
+    # 验证必填参数
+    if not draft_folder:
+        error_message = "Hi, the required parameter 'draft_folder' is missing. Please add it and try again."
+        result["error"] = error_message
+        return jsonify(result)
+
+    if not script_steps or not isinstance(script_steps, list):
+        error_message = "Hi, the required parameter 'script' is missing or invalid. It should be a list of script steps."
+        result["error"] = error_message
+        return jsonify(result)
+
+    try:
+        # 如果没有提供 draft_id，创建新草稿
+        if not draft_id:
+            script, draft_id = create_draft(width=width, height=height)
+
+        # 定义动作类型与处理函数的映射关系
+        action_handlers = {
+            'add_image': add_image,
+            'add_video': add_video,
+            'add_audio': add_audio,
+            'add_text': add_text,
+            'add_video_keyframe': add_video_keyframe,
+            'add_effect': add_effect,
+            'add_sticker': add_sticker,
+            'add_subtitle': add_subtitle
+        }
+
+        # 按顺序执行每个步骤
+        for step_index, step in enumerate(script_steps):
+            step_id = step.get('id', f'step_{step_index}')
+            action_type = step.get('action_type')
+            params = step.get('params', {})
+
+            # 验证步骤参数
+            if not action_type:
+                error_message = f"Step '{step_id}': action_type is missing."
+                result["error"] = error_message
+                return jsonify(result)
+
+            # 如果 params 是字符串，解析为 JSON
+            if isinstance(params, str):
+                try:
+                    params = json.loads(params)
+                except json.JSONDecodeError as e:
+                    error_message = f"Step '{step_id}': failed to parse params JSON. Error: {str(e)}"
+                    result["error"] = error_message
+                    return jsonify(result)
+
+            # 检查 action_type 是否支持
+            if action_type not in action_handlers:
+                error_message = f"Step '{step_id}': unsupported action_type '{action_type}'. Supported types are: {', '.join(action_handlers.keys())}."
+                result["error"] = error_message
+                return jsonify(result)
+
+            # 将 draft_id 添加到参数中
+            params['draft_id'] = draft_id
+
+            # 调用相应的处理函数
+            try:
+                # 创建一个模拟的请求上下文来调用现有的路由函数
+                with app.test_request_context(
+                    json=params,
+                    method='POST'
+                ):
+                    handler = action_handlers[action_type]
+                    step_result = handler()
+
+                    # 获取响应数据
+                    step_response = step_result.get_json()
+
+                    # 检查步骤是否成功
+                    if not step_response.get('success', False):
+                        error_message = f"Step '{step_id}' (action: {action_type}): {step_response.get('error', 'Unknown error')}"
+                        result["error"] = error_message
+                        return jsonify(result)
+
+            except Exception as e:
+                error_message = f"Step '{step_id}' (action: {action_type}): {str(e)}"
+                result["error"] = error_message
+                return jsonify(result)
+
+        # 所有步骤执行成功后，保存草稿
+        draft_result = save_draft_impl(draft_id, draft_folder)
+
+        result["success"] = True
+        result["output"] = draft_result
+        return jsonify(result)
+
+    except Exception as e:
+        error_message = f"Error occurred while executing workflow: {str(e)}"
+        result["error"] = error_message
         return jsonify(result)
 
 

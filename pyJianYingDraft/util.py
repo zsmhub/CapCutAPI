@@ -35,11 +35,18 @@ def assign_attr_with_json(obj: object, attrs: List[str], json_data: Dict[str, An
     """
     type_hints: Dict[str, Type] = {}
     for cls in obj.__class__.__mro__:
-        if '__annotations__' in cls.__dict__:
-            type_hints.update(cls.__annotations__)
+        # 使用 getattr 更安全地获取类型注解
+        annotations = getattr(cls, '__annotations__', None)
+        if annotations:
+            type_hints.update(annotations)
 
     for attr in attrs:
-        if hasattr(type_hints[attr], 'import_json'):
+        if attr not in json_data:
+            continue  # 如果json_data中没有该属性，跳过
+        if attr not in type_hints:
+            # 如果类型注解中没有该属性，直接赋值
+            obj.__setattr__(attr, json_data[attr])
+        elif hasattr(type_hints[attr], 'import_json'):
             obj.__setattr__(attr, type_hints[attr].import_json(json_data[attr]))
         else:
             obj.__setattr__(attr, type_hints[attr](json_data[attr]))

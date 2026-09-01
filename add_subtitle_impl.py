@@ -5,6 +5,7 @@ from pyJianYingDraft.text_segment import TextBubble, TextEffect
 from typing import Optional
 import requests
 import os
+from tool import pixel_to_ratio
 
 def add_subtitle_impl(
     srt_path: str,
@@ -18,26 +19,28 @@ def add_subtitle_impl(
     italic: bool = False,
     underline: bool = False,
     font_color: str = "#FFFFFF",
-    
+
     # Border parameters
     border_alpha: float = 1.0,
     border_color: str = "#000000",
     border_width: float = 0.0,  # Default no border display
-    
+
     # Background parameters
     background_color: str = "#000000",
     background_style: int = 1,
     background_alpha: float = 0.0,  # Default no background display
-    
+
     # Bubble effect
     bubble_effect_id: Optional[str] = None,
     bubble_resource_id: Optional[str] = None,
-    
+
     # Text effect
     effect_effect_id: Optional[str] = None,
     # Image adjustment parameters
     transform_x: float = 0.0,
-    transform_y: float = -0.8,  # Default subtitle position at bottom
+    transform_y: float = 0.0,  # Default subtitle position at bottom
+    transform_x_px: float = 0,
+    transform_y_px: float = 0,
     scale_x: float = 1.0,
     scale_y: float = 1.0,
     rotation: float = 0.0,
@@ -64,10 +67,10 @@ def add_subtitle_impl(
         width=width,
         height=height
     )
-    
+
     # Process subtitle content
     srt_content = None
-    
+
     # Check if it's a URL
     if srt_path.startswith(('http://', 'https://')):
         try:
@@ -89,7 +92,7 @@ def add_subtitle_impl(
         srt_content = srt_path
         # Handle possible escape characters
         srt_content = srt_content.replace('\\n', '\n').replace('/n', '\n')
-    
+
     # Import subtitles
     # Convert hexadecimal color to RGB
     rgb_color = hex_to_rgb(font_color)
@@ -102,7 +105,7 @@ def add_subtitle_impl(
             color=hex_to_rgb(border_color),
             width=border_width
         )
-    
+
     # Create text_background
     text_background = None
     if background_alpha > 0:
@@ -111,7 +114,7 @@ def add_subtitle_impl(
             style=background_style,
             alpha=background_alpha
         )
-    
+
     # Create text_style
     text_style = draft.Text_style(
         size=font_size,
@@ -123,7 +126,7 @@ def add_subtitle_impl(
         vertical=vertical,  # Use the passed vertical parameter
         alpha=alpha  # Use the passed alpha parameter
     )
-    
+
     # Create bubble effect
     text_bubble = None
     if bubble_effect_id and bubble_resource_id:
@@ -131,7 +134,7 @@ def add_subtitle_impl(
             effect_id=bubble_effect_id,
             resource_id=bubble_resource_id
         )
-    
+
     # Create text effect
     text_effect = None
     if effect_effect_id:
@@ -139,7 +142,11 @@ def add_subtitle_impl(
             effect_id=effect_effect_id,
             resource_id=effect_effect_id
         )
-    
+
+    # 如果transform_x和transform_y为0，则使用transform_x_px和transform_y_px
+    if transform_x == 0 and transform_y == 0:
+        transform_x, transform_y = pixel_to_ratio(x=transform_x_px, y=transform_y_px, video_width=script.width, video_height=script.height)
+
     # Create clip_settings
     clip_settings = draft.Clip_settings(
         transform_x=transform_x,

@@ -6,14 +6,17 @@ from typing import Optional, List  # add List type hint
 from pyJianYingDraft import exceptions
 from create_draft import get_or_create_draft
 from pyJianYingDraft.text_segment import TextBubble, TextEffect, TextStyleRange
+from tool import pixel_to_ratio
 
 def add_text_impl(
     text: str,
     start: float,
     end: float,
     draft_id: str | None = None,  # Python 3.10+ 新语法
-    transform_y: float = -0.8,
+    transform_y: float = 0,
     transform_x: float = 0,
+    transform_y_px: float = 0,
+    transform_x_px: float = 0,
     font: Optional[str] = None,
     font_color: str = "#ffffff",
     font_size: float = 8.0,
@@ -55,6 +58,9 @@ def add_text_impl(
     fixed_height: float = -1,  # Text fixed height ratio, default -1 means not fixed
     # 多样式文本参数
     text_styles: Optional[List[TextStyleRange]] = None,  # 文本的不同部分的样式列表
+    font_align: int = 0, # 对齐方式
+    letter_spacing: int = 0, # 字间距
+    line_spacing: int = 0, # 行间距
 ):
     """
     Add text subtitle to the specified draft (configurable parameter version)
@@ -110,7 +116,7 @@ def add_text_impl(
         except:
             available_fonts = [attr for attr in dir(Font_type) if not attr.startswith('_')]
             raise ValueError(f"Unsupported font: {font}, please use one of the fonts in Font_type: {available_fonts}")
-    
+
     # Validate alpha value range
     if not 0.0 <= font_alpha <= 1.0:
         raise ValueError("alpha value must be between 0.0 and 1.0")
@@ -118,7 +124,7 @@ def add_text_impl(
         raise ValueError("border_alpha value must be between 0.0 and 1.0")
     if not 0.0 <= background_alpha <= 1.0:
         raise ValueError("background_alpha value must be between 0.0 and 1.0")
-    
+
     # Get or create draft
     draft_id, script = get_or_create_draft(
         draft_id=draft_id,
@@ -143,7 +149,7 @@ def add_text_impl(
         rgb_border_color = hex_to_rgb(border_color)
     except ValueError as e:
         raise ValueError(f"Color parameter error: {str(e)}")
-    
+
     # Create text_border
     text_border = None
     if border_width > 0:
@@ -152,7 +158,7 @@ def add_text_impl(
             color=rgb_border_color,
             width=border_width
         )
-    
+
     # Create text_background
     text_background = None
     if background_alpha > 0:
@@ -166,7 +172,7 @@ def add_text_impl(
             horizontal_offset=background_horizontal_offset,
             vertical_offset=background_vertical_offset
         )
-    
+
     # 创建text_shadow (阴影)
     text_shadow = None
     if shadow_enabled:
@@ -186,14 +192,14 @@ def add_text_impl(
             effect_id=bubble_effect_id,
             resource_id=bubble_resource_id
         )
-    
+
     # Create text effect
     text_effect = None
     if effect_effect_id:
         text_effect = TextEffect(
             effect_id=effect_effect_id
         )
-    
+
     # Convert ratio to pixel value
     pixel_fixed_width = -1
     pixel_fixed_height = -1
@@ -201,7 +207,11 @@ def add_text_impl(
         pixel_fixed_width = int(fixed_width * script.width)
     if fixed_height > 0:
         pixel_fixed_height = int(fixed_height * script.height)
-    
+
+    # 如果transform_x和transform_y为0，则使用transform_x_px和transform_y_px
+    if transform_x == 0 and transform_y == 0:
+        transform_x, transform_y = pixel_to_ratio(x=transform_x_px, y=transform_y_px, video_width=script.width, video_height=script.height)
+
     # Create text segment (using configurable parameters)
     text_segment = draft.Text_segment(
         text,
@@ -210,7 +220,9 @@ def add_text_impl(
         style=draft.Text_style(
             color=rgb_color,
             size=font_size,
-            align=1,
+            align=font_align,
+            letter_spacing=letter_spacing,
+            line_spacing=line_spacing,
             vertical=vertical,  # Set whether to display vertically
             alpha=font_alpha  # Set transparency
         ),
@@ -228,7 +240,7 @@ def add_text_impl(
             # 验证范围有效性
             if style_range.start < 0 or style_range.end > len(text) or style_range.start >= style_range.end:
                 raise ValueError(f"无效的文本范围: [{style_range.start}, {style_range.end}), 文本长度: {len(text)}")
-            
+
             # 应用样式到特定文本范围
             text_segment.add_text_style(style_range)
 
